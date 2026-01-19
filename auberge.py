@@ -18,7 +18,7 @@ LLM_URL = f"http://localhost:{LLM_PORT}/llm"
 
 app = Flask(__name__)
 
-@app.route("/auberge", methods=["POST", "PUT"])
+@app.route("/auberge", methods=["POST"])
 def auberge():
     request_json = request.get_json()
     prompt = request_json.get("prompt")

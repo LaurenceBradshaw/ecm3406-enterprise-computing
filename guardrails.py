@@ -8,7 +8,7 @@ GUARDRAILS_PORT = 3001
 
 app = Flask(__name__)
 
-@app.route("/guardrails/<string:id>", methods=["POST", "PUT"])
+@app.route("/guardrails/<string:id>", methods=["PUT"])
 def create_guardrail(id):
     request_json = request.get_json()
     id2 = request_json.get("id")

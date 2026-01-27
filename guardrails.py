@@ -1,5 +1,3 @@
-import os
-import requests
 import database
 from flask import Flask, request
 import re
@@ -24,7 +22,7 @@ def create_guardrail(id):
         return {}, 400 # Bad Request
     
     js = {"id": id2, "regx": regx, "sub": sub}
-    if database.db.lookup(id):
+    if database.db.lookup(id) is not None:
         if database.db.update(js):
             return {}, 204 # No Content
         else:
@@ -38,7 +36,7 @@ def create_guardrail(id):
 @app.route("/guardrails/<string:id>", methods=["GET"])
 def get_guardrail(id):
     record = database.db.lookup(id)
-    if record:
+    if record is not None:
         return record, 200 # OK
     else:
         return {}, 404 # Not Found
@@ -52,11 +50,11 @@ def delete_guardrail(id):
     
 @app.route("/guardrails", methods=["GET"])
 def list_guardrails():
-    try:
-        ids = database.db.get_ids()
-        return ids, 200 # OK
-    except Exception as exc:
+    ids = database.db.get_ids()
+    if ids is None:
         return {}, 500 # Internal Server Error
+    
+    return ids, 200 # OK
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=GUARDRAILS_PORT)

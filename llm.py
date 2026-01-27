@@ -1,7 +1,8 @@
+import os
 import requests
 from flask import Flask, jsonify, request
 
-MISTRAL_API_KEY = ""
+MISTRAL_API_KEY = os.environ["MISTRAL_API_KEY"]
 MISTRAL_API_URL = "https://api.mistral.ai/v1/chat/completions"
 MISTRAL_MODEL = "mistral-small-latest"
 LLM_PORT = 3000

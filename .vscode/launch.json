@@ -1,0 +1,47 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "llm",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/llm.py",
+            "console": "integratedTerminal",
+            "envFile": "${workspaceFolder}/.env"
+        },
+        {
+            "name": "guardrails",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/guardrails.py",
+            "console": "integratedTerminal",
+            "envFile": "${workspaceFolder}/.env"
+        },
+        {
+            "name": "auberge",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/auberge.py",
+            "console": "integratedTerminal",
+            "envFile": "${workspaceFolder}/.env"
+        },
+        {
+            "name": "Unit Tests",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "unittest",
+            "args": [
+                "test5.py",
+                "--verbose"
+            ],
+            "console": "integratedTerminal",
+            "envFile": "${workspaceFolder}/.env"
+        }
+    ],
+    "compounds": [
+        {
+            "name": "All Services",
+            "configurations": ["llm", "guardrails", "auberge"]
+        }
+    ]
+}

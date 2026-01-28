@@ -33,10 +33,16 @@ def create_guardrail(id):
             
 @app.route("/guardrails/<string:id>", methods=["GET"])
 def get_guardrail(id):
+    if type(id) != str:
+        return {}, codes.bad_request
+    
     return database.db.lookup(id)
     
 @app.route("/guardrails/<string:id>", methods=["DELETE"])
 def delete_guardrail(id):
+    if type(id) != str:
+        return {}, codes.bad_request
+    
     _, status = database.db.lookup(id)
     if status != codes.ok:
         return {}, status

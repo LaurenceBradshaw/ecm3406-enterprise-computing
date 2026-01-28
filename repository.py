@@ -21,7 +21,7 @@ class Repository:
             return {}, codes.internal_server_error
         
         if not (200 <= response.status_code < 300):
-            return {}, response.status_code
+            return {}, codes.internal_server_error
 
         return {}, codes.no_content
 
@@ -39,7 +39,7 @@ class Repository:
             return {}, codes.internal_server_error
 
         if not (200 <= response.status_code < 300):
-            return {}, response.status_code
+            return {}, codes.internal_server_error
 
         return {}, codes.created
 
@@ -57,7 +57,7 @@ class Repository:
             return {}, codes.internal_server_error
         
         if not (200 <= response.status_code < 300):
-            return {}, response.status_code
+            return {}, codes.internal_server_error
         
         return {}, codes.no_content
 
@@ -70,7 +70,7 @@ class Repository:
             return {}, codes.internal_server_error
     
         if not (200 <= response.status_code < 300):
-            return {}, response.status_code
+            return {}, codes.internal_server_error
         
         data = response.json()
         if data is None:
@@ -91,7 +91,7 @@ class Repository:
             return {}, codes.internal_server_error
 
         if not (200 <= response.status_code < 300):
-            return {}, response.status_code
+            return {}, codes.internal_server_error
 
         return {}, codes.no_content
 
@@ -104,7 +104,7 @@ class Repository:
             return [], codes.internal_server_error
 
         if not (200 <= response.status_code < 300):
-            return [], response.status_code
+            return [], codes.internal_server_error
 
         data = response.json()
         if data is None:

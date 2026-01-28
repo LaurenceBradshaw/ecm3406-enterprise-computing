@@ -1,8 +1,12 @@
 import os
 import requests
+from requests.status_codes import codes
 
 FIREBASE_DB = os.environ["FIREBASE_DB"]
 FIREBASE_URL = f"https://{FIREBASE_DB}-default-rtdb.europe-west1.firebasedatabase.app/" 
+
+# All IDs are internally prefixed with an underscore to avoid issues with Firebase treatings numeric keys with array semantics.
+# This underscore shouldn't leak outside this repository layer.
 
 class Repository:
     def __init__(self,table):
@@ -12,17 +16,17 @@ class Repository:
         url = f"{FIREBASE_URL}/{self.table}.json"
 
         try:
-            response = requests.delete(url, timeout=5)
+            response = requests.delete(url)
         except requests.RequestException:
-            return False
+            return {}, codes.internal_server_error
         
         if not (200 <= response.status_code < 300):
-            return False
+            return {}, response.status_code
 
-        return True
+        return {}, codes.no_content
 
     def insert(self, js):
-        url = f"{FIREBASE_URL}/{self.table}/{js['id']}.json"
+        url = f"{FIREBASE_URL}/{self.table}/_{js['id']}.json"
 
         data = {
             "regx": js["regx"],
@@ -32,15 +36,15 @@ class Repository:
         try:
             response = requests.put(url, json=data)
         except requests.RequestException:
-            return False
+            return {}, codes.internal_server_error
 
         if not (200 <= response.status_code < 300):
-            return False
+            return {}, response.status_code
 
-        return True
+        return {}, codes.created
 
     def update(self,js):
-        url = f"{FIREBASE_URL}/{self.table}/{js['id']}.json"
+        url = f"{FIREBASE_URL}/{self.table}/_{js['id']}.json"
 
         data = {
             "regx": js["regx"],
@@ -48,63 +52,62 @@ class Repository:
         }
 
         try:
-            response = requests.patch(url, json=data, timeout=5)
+            response = requests.patch(url, json=data)
         except requests.RequestException:
-            return False
+            return {}, codes.internal_server_error
         
         if not (200 <= response.status_code < 300):
-            return False
+            return {}, response.status_code
         
-        return True
+        return {}, codes.no_content
 
     def lookup(self, id):
-        url = f"{FIREBASE_URL}/{self.table}/{id}.json"
+        url = f"{FIREBASE_URL}/{self.table}/_{id}.json"
 
         try:
             response = requests.get(url)
         except requests.RequestException:
-            return None
+            return {}, codes.internal_server_error
     
         if not (200 <= response.status_code < 300):
-            return None
-
+            return {}, response.status_code
+        
         data = response.json()
-
         if data is None:
-            return None
+            return {}, codes.not_found
 
         return {
             "id": id,
             "regx": data.get("regx"),
             "sub": data.get("sub")
-        }
+        }, codes.ok
 
     def delete(self, id):
-        url = f"{FIREBASE_URL}/{self.table}/{id}.json"
+        url = f"{FIREBASE_URL}/{self.table}/_{id}.json"
 
         try:
-            response = requests.delete(url, timeout=5)
+            response = requests.delete(url)
         except requests.RequestException:
-            return False
+            return {}, codes.internal_server_error
 
         if not (200 <= response.status_code < 300):
-            return False
+            return {}, response.status_code
 
-        return True
+        return {}, codes.no_content
 
     def get_ids(self):
         url = f"{FIREBASE_URL}/{self.table}.json"
 
         try:
-            response = requests.get(url, timeout=5)
+            response = requests.get(url)
         except requests.RequestException:
-            return None
+            return [], codes.internal_server_error
 
         if not (200 <= response.status_code < 300):
-            return None
+            return [], response.status_code
 
         data = response.json()
         if data is None:
-            return []
-
-        return list(data.keys())
+            return [], codes.ok
+        
+        return [key[1:] for key in data.keys()], codes.ok

@@ -1,6 +1,7 @@
 import os
 import requests
-from flask import Flask, jsonify, request
+from requests.status_codes import codes
+from flask import Flask, request
 
 MISTRAL_API_KEY = os.environ["MISTRAL_API_KEY"]
 MISTRAL_API_URL = "https://api.mistral.ai/v1/chat/completions"
@@ -14,7 +15,7 @@ def llm():
     request_json = request.get_json()
     prompt = request_json.get("prompt")
     if not(prompt and type(prompt) == str):
-        return {}, 400
+        return {}, codes.bad_request
 
     # Since the mistralai package is not installed in the environment in Lovelace
     # need to manually craft the HTTP request.
@@ -40,20 +41,16 @@ def llm():
             timeout=30,
         )
 
-        if response.status_code != 200:
-            return jsonify(
-                error="Mistral API error",
-                details=response.text,
-            ), 500
-
+        if response.status_code != codes.ok:
+            return {}, codes.internal_server_error
+        
         response_json = response.json()
         output_text = response_json["choices"][0]["message"]["content"]
 
-        return jsonify(output=output_text), 200
+        return {"output": output_text}, codes.ok
 
     except requests.RequestException as exc:
-        return {}, 500
-
+        return {}, codes.internal_server_error
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=LLM_PORT)

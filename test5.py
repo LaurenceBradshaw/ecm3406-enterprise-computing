@@ -172,18 +172,27 @@ class Testing(unittest.TestCase):
   def test_014_guardrails_list_non_empty(self):
       database.db.clear()
 
-      js1 = {"id": "a", "regx": r"abc", "sub": "x"}
-      js2 = {"id": "b", "regx": r"def", "sub": "y"}
+      js1 = {"id": "1", "regx": r"abc", "sub": "x"}
+      js2 = {"id": "2", "regx": r"def", "sub": "y"}
 
-      requests.put(f'{GUARDRAILS}/a', json=js1)
-      requests.put(f'{GUARDRAILS}/b', json=js2)
+      requests.put(f'{GUARDRAILS}/1', json=js1)
+      requests.put(f'{GUARDRAILS}/2', json=js2)
 
       rsp = requests.get(f'{GUARDRAILS}')
       self.assertEqual(rsp.status_code, 200)
 
       ids = rsp.json()
       self.assertEqual(type(ids), list)
-      self.assertEqual(set(ids), {"a", "b"})
+      self.assertEqual(set(ids), {"1", "2"})
+
+  ############################################################
+  ## test_015_delete_resource_doesnt_exist                  ##
+  ############################################################
+  def test_015_delete_resource_doesnt_exist(self):
+      database.db.clear()
+
+      rsp = requests.delete(f'{GUARDRAILS}/nonexistent')
+      self.assertEqual(rsp.status_code, 404)
 
   ############################################################
   ## test_005_auberge                                       ##

@@ -1,4 +1,5 @@
 import os
+from typing import Any
 import requests
 from requests.status_codes import codes
 
@@ -9,23 +10,40 @@ FIREBASE_URL = f"https://{FIREBASE_DB}-default-rtdb.europe-west1.firebasedatabas
 # This underscore shouldn't leak outside this repository layer.
 
 class Repository:
+    """
+    Repository class to interact with Firebase Realtime Database for guardrail storage.
+    """
     def __init__(self,table):
         self.table = table 
   
-    def clear(self):
+    def clear(self) -> None | bool:
+        """
+        Clear all entries in the specified table.
+        
+        :return: None on error, True on success, False on failure
+        :rtype: None | bool
+        """
         url = f"{FIREBASE_URL}/{self.table}.json"
 
         try:
             response = requests.delete(url)
         except requests.RequestException:
-            return {}, codes.internal_server_error
+            return None
         
         if not (200 <= response.status_code < 300):
-            return {}, codes.internal_server_error
+            return False
 
-        return {}, codes.no_content
+        return True
 
-    def insert(self, js):
+    def insert(self, js: dict[str, Any]) -> None | bool:
+        """
+        Insert a new entry into the specified table.
+        
+        :param js: JSON object representing the entry to insert
+        :type js: dict[str, Any]
+        :return: None on error, True on success, False on failure
+        :rtype: None | bool
+        """
         url = f"{FIREBASE_URL}/{self.table}/_{js['id']}.json"
 
         data = {
@@ -36,14 +54,22 @@ class Repository:
         try:
             response = requests.put(url, json=data)
         except requests.RequestException:
-            return {}, codes.internal_server_error
+            return None
 
         if not (200 <= response.status_code < 300):
-            return {}, codes.internal_server_error
+            return False
 
-        return {}, codes.created
+        return True
 
-    def update(self,js):
+    def update(self, js: dict[str, Any]) -> None | bool:
+        """
+        Update an existing entry in the specified table.
+        
+        :param js: JSON object representing the entry to update
+        :type js: dict[str, Any]
+        :return: None on error, True on success, False on failure
+        :rtype: bool | None
+        """
         url = f"{FIREBASE_URL}/{self.table}/_{js['id']}.json"
 
         data = {
@@ -54,60 +80,82 @@ class Repository:
         try:
             response = requests.patch(url, json=data)
         except requests.RequestException:
-            return {}, codes.internal_server_error
+            return None
         
         if not (200 <= response.status_code < 300):
-            return {}, codes.internal_server_error
+            return False
         
-        return {}, codes.no_content
+        return True
 
-    def lookup(self, id):
+    def lookup(self, id: str) -> None | bool | dict[str, Any]:
+        """
+        Lookup an entry by its ID in the specified table.
+        
+        :param id: ID of the entry to lookup
+        :type id: str
+        :return: None on error, False on failure, or dict with entry data on success
+        :rtype: bool | dict[str, Any] | None
+        """
         url = f"{FIREBASE_URL}/{self.table}/_{id}.json"
 
         try:
             response = requests.get(url)
         except requests.RequestException:
-            return {}, codes.internal_server_error
+            return None
     
         if not (200 <= response.status_code < 300):
-            return {}, codes.internal_server_error
+            return False
         
         data = response.json()
         if data is None:
-            return {}, codes.not_found
+            return {}
 
         return {
             "id": id,
             "regx": data.get("regx"),
             "sub": data.get("sub")
-        }, codes.ok
+        }
 
-    def delete(self, id):
+    def delete(self, id: str) -> None | bool:
+        """
+        Delete an entry by its ID in the specified table.
+        
+        :param id: ID of the entry to delete
+        :type id: str
+        :return: None on error, True on success, False on failure
+        :rtype: bool | None
+        """
         url = f"{FIREBASE_URL}/{self.table}/_{id}.json"
 
         try:
             response = requests.delete(url)
         except requests.RequestException:
-            return {}, codes.internal_server_error
+            return None
 
         if not (200 <= response.status_code < 300):
-            return {}, codes.internal_server_error
+            return False
 
-        return {}, codes.no_content
+        return True
 
-    def get_ids(self):
+    def get_ids(self) -> None | bool | list[str]:
+        """
+        Get a list of all entry IDs in the specified table.
+        
+        :return: None on error, False on failure, or list of IDs on success
+        :rtype: bool | list[str] | None
+        """
         url = f"{FIREBASE_URL}/{self.table}.json"
 
         try:
             response = requests.get(url)
         except requests.RequestException:
-            return [], codes.internal_server_error
+            return None
 
         if not (200 <= response.status_code < 300):
-            return [], codes.internal_server_error
+            return False
 
         data = response.json()
         if data is None:
-            return [], codes.ok
+            return []
         
-        return [key[1:] for key in data.keys()], codes.ok
+        return [key[1:] for key in data.keys()]

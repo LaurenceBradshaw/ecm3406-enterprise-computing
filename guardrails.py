@@ -42,11 +42,13 @@ def create_guardrail(id: str) -> tuple[dict[str, Any], int]:
     :rtype: tuple[dict[str, Any], int]
     """
     res = Response()
+    # Get JSON body
     request_json = request.get_json()
     if request_json is None:
         res.status_code = codes.bad_request
         return res.to_tuple()
     
+    # Validate fields
     id2 = request_json.get("id")
     regx = request_json.get("regx")
     sub = request_json.get("sub")
@@ -61,20 +63,21 @@ def create_guardrail(id: str) -> tuple[dict[str, Any], int]:
         res.status_code = codes.bad_request
         return res.to_tuple()
     
+    # Check if guardrail exists
     js = {"id": id2, "regx": regx, "sub": sub}
     lookup = database.db.lookup(id)
     err = handle_repository_error(lookup, res)
     if err:
         return res.to_tuple()
     
-    if lookup == {}:
+    if lookup == {}: # guardrail does not exist, create it
         insert = database.db.insert(js)
         err = handle_repository_error(insert, res)
         if err:
             return res.to_tuple()
         
         res.status_code = codes.created
-    else:
+    else: # guardrail exists, update it
         update = database.db.update(js)
         err = handle_repository_error(update, res)
         if err:
@@ -96,14 +99,15 @@ def get_guardrail(id: str) -> tuple[dict[str, Any], int]:
     """
     res = Response()
     
+    # Lookup guardrail
     lookup = database.db.lookup(id)
     err = handle_repository_error(lookup, res)
     if err:
         return res.to_tuple()
     
-    if lookup == {}:
+    if lookup == {}: # guardrail not found
         res.status_code = codes.not_found
-    else:
+    else: # guardrail found
         res.data = lookup
         res.status_code = codes.ok
     
@@ -121,15 +125,17 @@ def delete_guardrail(id: str) -> tuple[dict[str, Any], int]:
     """
     res = Response()
     
+    # Lookup guardrail to see if it exists
     lookup = database.db.lookup(id)
     err = handle_repository_error(lookup, res)
     if err:
         return res.to_tuple()
     
-    if lookup == {}:
+    if lookup == {}: # guardrail not found
         res.status_code = codes.not_found
         return res.to_tuple()
     
+    # Delete guardrail
     delete = database.db.delete(id)
     err = handle_repository_error(delete, res)
     if err:
@@ -147,6 +153,7 @@ def list_guardrails() -> tuple[list[Any], int]:
     :rtype: tuple[list[Any], int]
     """
     res = Response()
+    # Get list of guardrail IDs
     ids = database.db.get_ids()
     err = handle_repository_error(ids, res)
     if err:

@@ -8,6 +8,7 @@ FIREBASE_URL = f"https://{FIREBASE_DB}-default-rtdb.europe-west1.firebasedatabas
 
 # All IDs are internally prefixed with an underscore to avoid issues with Firebase treatings numeric keys with array semantics.
 # This underscore shouldn't leak outside this repository layer.
+# If the unit tests end up using numeric IDs, get_ids would fail without this workaround.
 
 class Repository:
     """

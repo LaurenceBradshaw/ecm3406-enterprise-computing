@@ -20,16 +20,19 @@ def llm() -> tuple[dict[str, str], int]:
     :rtype: tuple[dict[str, str], int]
     """
     res = Response()
+    # Get JSON body
     request_json = request.get_json()
     if request_json is None:
         res.status_code = codes.bad_request
         return res.to_tuple()
     
+    # Validate fields
     prompt = request_json.get("prompt")
     if not(prompt and type(prompt) == str):
         res.status_code = codes.bad_request
         return res.to_tuple()
 
+    # Send request to Mistral API
     # Since the mistralai package is not installed in the environment in Lovelace
     # need to manually craft the HTTP request.
     headers = {
@@ -57,9 +60,10 @@ def llm() -> tuple[dict[str, str], int]:
         return res.to_tuple()
 
     if mistral_rsp.status_code != codes.ok:
-        res.status_code = codes.internal_server_error
+        res.status_code = codes.bad_gateway
         return res.to_tuple()
     
+    # Parse response
     response_json = mistral_rsp.json()
     if (response_json is None \
         or "choices" not in response_json \
@@ -67,11 +71,11 @@ def llm() -> tuple[dict[str, str], int]:
         or "message" not in response_json["choices"][0] \
         or "content" not in response_json["choices"][0]["message"]
         ):
-        res.status_code = codes.internal_server_error
+        res.status_code = codes.internal_server_error # or bad_gateway?
         return res.to_tuple()
     
     output_text = response_json["choices"][0]["message"]["content"]
-
+    # Return output
     res.data = {"output": output_text}
     res.status_code = codes.ok
     return res.to_tuple()

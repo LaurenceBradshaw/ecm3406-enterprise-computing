@@ -1,8 +1,7 @@
-import requests
 from requests.status_codes import codes
 from flask import Flask, request
 import re
-from response import Response
+from communication import Response, make_request
 
 # If for whatever reason the guardrails or llm modules cannot be imported
 try:
@@ -43,31 +42,16 @@ def auberge() -> tuple[dict[str, str], int]:
         return res.to_tuple()
     
     # Get guardrail IDs
-    try:
-        gid_list_rsp = requests.get(GUARDRAILS_URL)
-    except requests.RequestException:
-        res.status_code = codes.internal_server_error
-        return res.to_tuple()
-    
-    if gid_list_rsp.status_code != codes.ok:
-        res.status_code = codes.bad_gateway
+    gid_list, success = make_request(GUARDRAILS_URL, "GET", res)
+    if not success:
         return res.to_tuple()
     
     # Fetch guardrails by ID
-    guardrail_ids = gid_list_rsp.json()
     guardrails = []
-    for gid in guardrail_ids:
-        try:
-            guardrail_rsp = requests.get(f"{GUARDRAILS_URL}/{gid}")
-        except requests.RequestException:
-            res.status_code = codes.internal_server_error
+    for gid in gid_list:
+        guardrail, success = make_request(f"{GUARDRAILS_URL}/{gid}", "GET", res)
+        if not success:
             return res.to_tuple()
-        
-        if guardrail_rsp.status_code != codes.ok:
-            res.status_code = codes.bad_gateway
-            return res.to_tuple()
-        
-        guardrail = guardrail_rsp.json()
         guardrails.append(guardrail)
 
     # Apply guardrails to prompt
@@ -77,27 +61,23 @@ def auberge() -> tuple[dict[str, str], int]:
             pattern = re.compile(gr["regx"])
             modified_prompt = pattern.sub(gr["sub"], modified_prompt)
         except re.error:
+            # Shouldn't happen since the regex was validated when the guardrail was created, but just in case
             res.status_code = codes.internal_server_error
             return res.to_tuple()
 
-    # Send modified prompt to LLM
-    try:
-        llm_rsp = requests.post(LLM_URL, json={"prompt": modified_prompt})
-    except requests.RequestException:
-        res.status_code = codes.internal_server_error
-        return res.to_tuple()
-    
-    if llm_rsp.status_code != codes.ok:
-        res.status_code = codes.bad_gateway
+    # Send modified prompt to LLM microservice
+    llm_rsp_json, success = make_request(LLM_URL, "POST", res, {"prompt": modified_prompt})
+    if not success:
         return res.to_tuple()
     
     # Apply guardrails to LLM output
-    output = llm_rsp.json().get("output")
+    output = llm_rsp_json.get("output")
     for gr in guardrails:
         try:
             pattern = re.compile(gr["regx"])
             output = pattern.sub(gr["sub"], output)
         except re.error:
+            # Shouldn't happen since the regex was validated when the guardrail was created, but just in case
             res.status_code = codes.internal_server_error
             return res.to_tuple()
     

@@ -3,7 +3,7 @@ import database
 from flask import Flask, request
 import re
 from requests.status_codes import codes
-from response import Response
+from communication import Response
 
 def handle_repository_error(result: None | bool, response: Response) -> bool:
     """

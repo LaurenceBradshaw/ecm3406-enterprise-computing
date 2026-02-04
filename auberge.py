@@ -30,11 +30,13 @@ def auberge() -> tuple[dict[str, str], int]:
     :rtype: tuple[dict[str, str], int]
     """
     res = Response()
+    # Get JSON body
     request_json = request.get_json()
     if request_json is None:
         res.status_code = codes.bad_request
         return res.to_tuple()
     
+    # Validate fields
     prompt = request_json.get("prompt")
     if not(prompt and type(prompt) == str):
         res.status_code = codes.bad_request
@@ -48,9 +50,10 @@ def auberge() -> tuple[dict[str, str], int]:
         return res.to_tuple()
     
     if gid_list_rsp.status_code != codes.ok:
-        res.status_code = codes.internal_server_error
+        res.status_code = codes.bad_gateway
         return res.to_tuple()
     
+    # Fetch guardrails by ID
     guardrail_ids = gid_list_rsp.json()
     guardrails = []
     for gid in guardrail_ids:
@@ -61,7 +64,7 @@ def auberge() -> tuple[dict[str, str], int]:
             return res.to_tuple()
         
         if guardrail_rsp.status_code != codes.ok:
-            res.status_code = codes.internal_server_error
+            res.status_code = codes.bad_gateway
             return res.to_tuple()
         
         guardrail = guardrail_rsp.json()
@@ -85,7 +88,7 @@ def auberge() -> tuple[dict[str, str], int]:
         return res.to_tuple()
     
     if llm_rsp.status_code != codes.ok:
-        res.status_code = codes.internal_server_error
+        res.status_code = codes.bad_gateway
         return res.to_tuple()
     
     # Apply guardrails to LLM output
@@ -98,6 +101,7 @@ def auberge() -> tuple[dict[str, str], int]:
             res.status_code = codes.internal_server_error
             return res.to_tuple()
     
+    # Return final output
     res.data = {"output": output}
     res.status_code = codes.ok
     return res.to_tuple()
